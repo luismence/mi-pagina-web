@@ -8,11 +8,12 @@
     body {
       font-family: Arial, sans-serif;
       background-color: #f4f4f4;
+      /* Ajustamos el body para permitir scroll si el contenido es largo */
+      padding-top: 50px;
+      padding-bottom: 50px;
+      margin: 0;
       display: flex;
       justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
     }
     .container {
       text-align: center;
@@ -20,6 +21,7 @@
       padding: 40px;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 600px; /* Ancho máximo para el contenedor */
     }
     .profile-pic {
       width: 150px;
@@ -38,6 +40,58 @@
       font-size: 1.2em;
       margin-top: 0;
     }
+    hr {
+      border: 0;
+      height: 1px;
+      background: #ddd;
+      margin: 40px 0;
+    }
+
+    /* Estilos para el juego Tres en Raya */
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background-color: #e0e0e0;
+      border-radius: 5px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .cell:hover {
+      background-color: #d0d0d0;
+    }
+    .cell.x {
+      color: #007BFF; /* Azul para X */
+    }
+    .cell.o {
+      color: #dc3545; /* Rojo para O */
+    }
+    #game-status {
+      margin: 20px 0;
+      font-size: 1.2em;
+      min-height: 1.5em; /* Espacio para el mensaje */
+    }
+    #reset-button {
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      background-color: #007BFF;
+      color: white;
+      border-radius: 5px;
+    }
   </style>
 </head>
 <body>
@@ -45,6 +99,101 @@
     <img src="DSC08644.JPG" alt="Foto de Luis Mendoza Cembranos" class="profile-pic">
     <h1>Luis Mendoza Cembranos</h1>
     <p>Estadístico del INE</p>
+
+    <hr>
+
+    <h2>Tres en Raya</h2>
+    <p>Hecho con HTML, CSS y JavaScript</p>
+    <div id="game-container">
+      <div id="game-board"></div>
+      <div id="game-status">Turno de X</div>
+      <button id="reset-button">Reiniciar Juego</button>
+    </div>
   </div>
+
+  <script>
+    const boardElement = document.getElementById('game-board');
+    const statusElement = document.getElementById('game-status');
+    const resetButton = document.getElementById('reset-button');
+
+    let board = ['', '', '', '', '', '', '', '', ''];
+    let currentPlayer = 'X';
+    let gameActive = true;
+
+    const winningConditions = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8], // Filas
+      [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columnas
+      [0, 4, 8], [2, 4, 6]             // Diagonales
+    ];
+
+    function handleCellClick(e) {
+      const clickedCell = e.target;
+      const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
+
+      if (board[clickedCellIndex] !== '' || !gameActive) {
+        return;
+      }
+
+      board[clickedCellIndex] = currentPlayer;
+      clickedCell.textContent = currentPlayer;
+      clickedCell.classList.add(currentPlayer.toLowerCase());
+
+      checkResult();
+    }
+
+    function checkResult() {
+      let roundWon = false;
+      for (let i = 0; i < winningConditions.length; i++) {
+        const winCondition = winningConditions[i];
+        let a = board[winCondition[0]];
+        let b = board[winCondition[1]];
+        let c = board[winCondition[2]];
+        if (a === '' || b === '' || c === '') {
+          continue;
+        }
+        if (a === b && b === c) {
+          roundWon = true;
+          break;
+        }
+      }
+
+      if (roundWon) {
+        statusElement.textContent = `¡Ganador: ${currentPlayer}!`;
+        gameActive = false;
+        return;
+      }
+
+      if (!board.includes('')) {
+        statusElement.textContent = '¡Empate!';
+        gameActive = false;
+        return;
+      }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      statusElement.textContent = `Turno de ${currentPlayer}`;
+    }
+
+    function resetGame() {
+      board = ['', '', '', '', '', '', '', '', ''];
+      gameActive = true;
+      currentPlayer = 'X';
+      statusElement.textContent = `Turno de ${currentPlayer}`;
+      document.querySelectorAll('.cell').forEach(cell => {
+        cell.textContent = '';
+        cell.classList.remove('x', 'o');
+      });
+    }
+
+    // Crear el tablero
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.setAttribute('data-index', i);
+      cell.addEventListener('click', handleCellClick);
+      boardElement.appendChild(cell);
+    }
+
+    resetButton.addEventListener('click', resetGame);
+  </script>
 </body>
 </html>
