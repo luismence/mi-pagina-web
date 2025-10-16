@@ -177,8 +177,13 @@
       }
 
       if (roundWon) {
-        statusElement.textContent = `¡Ganador: ${currentPlayer}!`;
         gameActive = false;
+        if (currentPlayer === 'X') {
+          // Si el jugador gana, se muestra el mensaje especial
+          document.getElementById('game-container').innerHTML = `<h2 style="color: #28a745; margin-top: 40px;">¡Enhorabuena!</h2><p style="font-size: 1.3em;">Licenciado en Ciencias Matemáticas por la UCM</p>`;
+        } else {
+          statusElement.textContent = `¡Ganador: ${currentPlayer}!`;
+        }
         return;
       }
 
