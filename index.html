@@ -106,6 +106,10 @@
     <p>Hecho con HTML, CSS y JavaScript</p>
     <div id="game-container">
       <div id="game-board"></div>
+      <div style="margin-top: 20px;">
+        <input type="checkbox" id="vs-ai-checkbox" checked>
+        <label for="vs-ai-checkbox">Jugar contra la máquina (O)</label>
+      </div>
       <div id="game-status">Turno de X</div>
       <button id="reset-button">Reiniciar Juego</button>
     </div>
@@ -115,10 +119,12 @@
     const boardElement = document.getElementById('game-board');
     const statusElement = document.getElementById('game-status');
     const resetButton = document.getElementById('reset-button');
+    const vsAiCheckbox = document.getElementById('vs-ai-checkbox');
 
     let board = ['', '', '', '', '', '', '', '', ''];
     let currentPlayer = 'X';
     let gameActive = true;
+    let isAiTurn = false;
 
     const winningConditions = [
       [0, 1, 2], [3, 4, 5], [6, 7, 8], // Filas
@@ -130,15 +136,28 @@
       const clickedCell = e.target;
       const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
 
-      if (board[clickedCellIndex] !== '' || !gameActive) {
+      // Ignorar clics si no es turno del jugador, la celda está ocupada o el juego terminó
+      if (isAiTurn || board[clickedCellIndex] !== '' || !gameActive) {
         return;
       }
 
-      board[clickedCellIndex] = currentPlayer;
-      clickedCell.textContent = currentPlayer;
-      clickedCell.classList.add(currentPlayer.toLowerCase());
+      makeMove(clickedCellIndex, currentPlayer);
 
-      checkResult();
+      if (gameActive && vsAiCheckbox.checked) {
+        isAiTurn = true;
+        // Pequeño retraso para que el movimiento de la IA no sea instantáneo
+        setTimeout(aiMove, 500);
+      }
+    }
+
+    // Función genérica para realizar un movimiento
+    function makeMove(index, player) {
+      if (board[index] === '' && gameActive) {
+        board[index] = player;
+        document.querySelector(`[data-index='${index}']`).textContent = player;
+        document.querySelector(`[data-index='${index}']`).classList.add(player.toLowerCase());
+        checkResult();
+      }
     }
 
     function checkResult() {
@@ -170,7 +189,50 @@
       }
 
       currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-      statusElement.textContent = `Turno de ${currentPlayer}`;
+      // Solo actualiza el turno si no va a jugar la IA inmediatamente
+      if (!isAiTurn) {
+        statusElement.textContent = `Turno de ${currentPlayer}`;
+      }
+    }
+
+    function aiMove() {
+      // Estrategia de la IA:
+      // 1. Buscar una jugada para ganar.
+      // 2. Si no, buscar una jugada para bloquear al oponente.
+      // 3. Si no, hacer un movimiento aleatorio.
+
+      let move = findStrategicMove('O'); // Intentar ganar
+      if (move === null) {
+        move = findStrategicMove('X'); // Intentar bloquear
+      }
+      if (move === null) {
+        // Movimiento aleatorio
+        const emptyCells = board.map((val, idx) => val === '' ? idx : null).filter(val => val !== null);
+        move = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      }
+
+      if (move !== null) {
+        makeMove(move, 'O');
+      }
+
+      isAiTurn = false;
+    }
+
+    function findStrategicMove(player) {
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === '') { // Solo probar en celdas vacías
+          const tempBoard = [...board];
+          tempBoard[i] = player;
+          // Comprobar si este movimiento resulta en una victoria
+          for (const condition of winningConditions) {
+            const [a, b, c] = condition;
+            if (tempBoard[a] === player && tempBoard[b] === player && tempBoard[c] === player) {
+              return i; // Devolver el índice de la jugada ganadora/de bloqueo
+            }
+          }
+        }
+      }
+      return null; // No se encontró jugada estratégica
     }
 
     function resetGame() {
@@ -178,6 +240,7 @@
       gameActive = true;
       currentPlayer = 'X';
       statusElement.textContent = `Turno de ${currentPlayer}`;
+      isAiTurn = false;
       document.querySelectorAll('.cell').forEach(cell => {
         cell.textContent = '';
         cell.classList.remove('x', 'o');
@@ -194,6 +257,7 @@
     }
 
     resetButton.addEventListener('click', resetGame);
+    vsAiCheckbox.addEventListener('change', resetGame);
   </script>
 </body>
 </html>
